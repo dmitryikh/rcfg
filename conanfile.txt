@@ -1,0 +1,6 @@
+[requires]
+nlohmann_json/3.7.3
+gtest/1.10.0
+
+[generators]
+cmake
