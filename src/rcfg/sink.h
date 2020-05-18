@@ -8,13 +8,18 @@
 
 namespace rcfg
 {
+    // ISink object is used to notify client code about events due parsing
 	class ISink
 	{
 	public:
+        // Go to parse nested key
 		virtual void Push(const std::string & key) {};
+        // Go one level up from nested key
 		virtual void Pop() {};
 
+        // Notify about parsing error
 		virtual void Error(const std::string & error) {};
+        // Notify about a try to modify not updatable parameter during parse with update
 		virtual void NotUpdatable(const std::string & old, const std::string & neww) {};
 		virtual void Changed(const std::string & old, const std::string & neww, const bool isDefault) {};
 		virtual void Set(const std::string & value, const bool isDefault) {};

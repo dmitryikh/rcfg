@@ -284,46 +284,50 @@ namespace rcfg
 		Parser<P> parser;
 	};
 
-	// template<typename P, template <class, class ... > class VectorType = std::vector>
-	// struct VectorParser : public IParser<VectorType<P>>
-	// {
-	// 	using Vector = VectorType<P>;
-	// public:
-	// 	VectorParser(Parser<P> parser = ParamParser<P>())
-	// 		: parser(std::move(parser))
-	// 	{}
+	template<typename P, template <class, class ... > class VectorType = std::vector>
+	struct VectorParser : public IParser<VectorType<P>>
+	{
+		using Vector = VectorType<P>;
+	public:
+		VectorParser(Parser<P> parser = ParamParser<P>())
+			: parser(std::move(parser))
+		{}
 
-	// 	void parse(ISink & sink, Vector & c, const Node & node, bool isUpdate) const override
-	// 	{
-	// 		if (!node.is_array())
-	// 		{
-	// 			sink.Error("Expecting array");
-	// 			return;
-	// 		}
+		void parse(ISink & sink, Vector & c, const Node & node, bool isUpdate) const override
+		{
+			if (!node.is_array())
+			{
+				sink.Error("Expecting array");
+				return;
+			}
 
-	// 		if (c.size() != node.size())
-	// 		{
-	// 			c.clear();
-	// 			c.resize(node.size(), {});
-	// 		}
+			if (c.size() != node.size())
+			{
+				c.clear();
+				c.resize(node.size(), {});
+			}
 
-	// 		for (auto it = node.begin(), size_t i = 0; it != node.end(); ++it, ++i) {
-	// 			sink.Push(std::to_string(i));
-	// 			parser.parse(sink, c[i], *it, isUpdate);
-	// 			sink.Pop();
-	// 		}
-	// 	}
+			size_t i = 0;
+			for (auto it = node.begin(); it != node.end(); ++it, ++i) {
+				sink.Push(std::to_string(i));
+				parser.parse(sink, c[i], *it, isUpdate);
+				sink.Pop();
+			}
+		}
 
-	// 	void dump(const Vector & c, Node & node) const override
-	// 	{
-	// 		for (const auto & value : c)
-	// 		{
-	// 			parser.dump(value, node.push_back(P{}));
-	// 		}
-	// 	}
+		void dump(const Vector & c, Node & node) const override
+		{
+			size_t i = 0;
+			for (const auto & value : c)
+			{
+				node.emplace_back();
+				parser.dump(value, node[i]);
+				i++;
+			}
+		}
 
-	// 	Parser<P> parser;
-	// };
+		Parser<P> parser;
+	};
 
 	template<typename C>
 	class ClassParser : public IParser<C>
