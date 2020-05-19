@@ -45,6 +45,9 @@ namespace rcfg
 	struct UpdatableTag {};
 	constexpr UpdatableTag Updatable;
 
+	struct SecretTag {};
+	constexpr SecretTag Secret;
+
 	template<typename P>
 	struct Default
 	{
@@ -217,7 +220,10 @@ namespace rcfg
 
 		void dump(const P & p, Node & node) const override
 		{
-			ParamTrait<P>::To(p, node);
+			if (isSecret)
+				ParamTrait<std::string>::To("***", node);
+			else
+				ParamTrait<P>::To(p, node);
 		}
 
 		template<typename P2>
@@ -232,6 +238,11 @@ namespace rcfg
 			isUpdatable = true;
 		}
 
+		void addOp(const SecretTag &)
+		{
+			isSecret = true;
+		}
+
 		template<typename Op>
 		auto addOp(Op && op) -> std::enable_if_t<std::is_base_of_v<CheckOpBase, std::decay_t<Op>>>
 		{
@@ -241,6 +252,7 @@ namespace rcfg
 		std::string name;
 		std::optional<P> def;
 		bool isUpdatable = false;
+		bool isSecret = false;
 		std::vector<checkFunc> checkFuncs;
 	};
 

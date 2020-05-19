@@ -98,3 +98,29 @@ TEST(ParamParser, Parse)
         }
     }
 }
+
+TEST(ParamParser, Secret)
+{
+    {
+        SCOPED_TRACE("Dump int as Secret");
+        const auto p = rcfg::ParamParser<int>{rcfg::Secret};
+        int val = 0;
+        json j;
+
+        p.dump(val, j);
+
+        ASSERT_EQ(val, 0);
+        ASSERT_EQ(j, "***");
+    }
+    {
+        SCOPED_TRACE("Dump string as Secret");
+        const auto p = rcfg::ParamParser<std::string>{rcfg::Secret};
+        std::string val = "aba";
+        json j;
+
+        p.dump(val, j);
+
+        ASSERT_EQ(val, "aba");
+        ASSERT_EQ(j, "***");
+    }
+}
