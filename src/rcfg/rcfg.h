@@ -195,19 +195,17 @@ namespace rcfg
 			if (checkErrors)
 				return;
 
-			const auto ppStr = ParamTrait<P>::ToString(pp);
+			const auto ppStr = toString(pp);
 			if (p != pp && isUpdate)
 			{
 				if (isUpdatable)
 				{
-					const auto pStr = ParamTrait<P>::ToString(p);
-					sink.Changed(pStr, ppStr, isDefault);
+					sink.Changed(toString(p), ppStr, isDefault);
 					p = pp;
 				}
 				else if (isUpdate)
 				{
-					const auto pStr = ParamTrait<P>::ToString(p);
-					sink.NotUpdatable(pStr, ppStr);
+					sink.NotUpdatable(toString(p), ppStr);
 				}
 			}
 			else if (isUpdate) {}
@@ -216,6 +214,14 @@ namespace rcfg
 				sink.Set(ppStr, isDefault);
 				p = pp;
 			}
+		}
+
+		std::string toString(const P & p) const
+		{
+			if (isSecret)
+				return "***";
+			else
+				return ParamTrait<P>::ToString(p);
 		}
 
 		void dump(const P & p, Node & node) const override

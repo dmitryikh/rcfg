@@ -20,3 +20,11 @@ add_executable(vector_struct
 
 target_link_libraries(vector_struct ${CONAN_LIBS})
 target_include_directories(vector_struct PUBLIC "${CMAKE_SOURCE_DIR}/src")
+
+
+add_executable(custom_param
+    custom_param.cpp
+)
+
+target_link_libraries(custom_param ${CONAN_LIBS})
+target_include_directories(custom_param PUBLIC "${CMAKE_SOURCE_DIR}/src")

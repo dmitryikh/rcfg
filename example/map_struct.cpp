@@ -1,5 +1,4 @@
 #include <string>
-#include <filesystem>
 #include <fstream>
 
 #include <rcfg/rcfg.h>
@@ -85,6 +84,10 @@ int main()
     // Update config
     std::cout << "\nUpdate config from json:\n\"\"\"\n" << jsonStr2 << "\"\"\"" << std::endl;
     Parse(l, GetParser(), jsonStr2, true);
+
+    nlohmann::json j;
+    GetParser().dump(l, j);
+    std::cout << j << std::endl;
 }
 
 /*
