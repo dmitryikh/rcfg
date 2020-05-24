@@ -1,5 +1,5 @@
 # rcfg
-Load&amp;Validate configs easy from json like hierarchy
+Load&amp;Validate configs easily from json-like hierarchy
 
 
 ## Features
