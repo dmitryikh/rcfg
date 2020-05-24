@@ -132,3 +132,12 @@ Update config from json:
 ```
 
 See more examples in `example/`.
+
+## Compilation
+```
+mkdir build
+cd build
+conan install  ..
+cmake ..
+cmake --build . -j 4
+```
