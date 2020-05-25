@@ -8,119 +8,119 @@ using json = nlohmann::json;
 
 TEST(ParamParser, Parse)
 {
-    {
-        SCOPED_TRACE("Parse int from nil");
-        const auto p = rcfg::ParamParser<int>{};
-        int val = 0;
-        json j;
+	{
+		SCOPED_TRACE("Parse int from nil");
+		const auto p = rcfg::ParamParser<int>{};
+		int val = 0;
+		json j;
 
-        TestEventSink sink;
-        p.parse(sink, val, j, false);
+		TestEventSink sink;
+		p.parse(sink, val, j, false);
 
-        ASSERT_EQ(sink.errorCount, 1);
-        ASSERT_EQ(sink.setCount, 0);
-        ASSERT_EQ(val, 0);
-    }
+		ASSERT_EQ(sink.errorCount, 1);
+		ASSERT_EQ(sink.setCount, 0);
+		ASSERT_EQ(val, 0);
+	}
 
-    {
-        SCOPED_TRACE("Parse int from 10");
-        const auto p = rcfg::ParamParser<int>{};
-        int val = 0;
-        json j = 10;
+	{
+		SCOPED_TRACE("Parse int from 10");
+		const auto p = rcfg::ParamParser<int>{};
+		int val = 0;
+		json j = 10;
 
-        TestEventSink sink;
-        p.parse(sink, val, j, false);
+		TestEventSink sink;
+		p.parse(sink, val, j, false);
 
-        ASSERT_EQ(sink.errorCount, 0);
-        ASSERT_EQ(sink.setCount, 1);
-        ASSERT_EQ(val, 10);
-    }
+		ASSERT_EQ(sink.errorCount, 0);
+		ASSERT_EQ(sink.setCount, 1);
+		ASSERT_EQ(val, 10);
+	}
 
-    {
-        SCOPED_TRACE("Parse int from bool");
-        const auto p = rcfg::ParamParser<int>{};
-        int val = 0;
-        json j = false;
+	{
+		SCOPED_TRACE("Parse int from bool");
+		const auto p = rcfg::ParamParser<int>{};
+		int val = 0;
+		json j = false;
 
-        TestEventSink sink;
-        p.parse(sink, val, j, false);
+		TestEventSink sink;
+		p.parse(sink, val, j, false);
 
-        // NOTE: false implicitly converted to int
-        ASSERT_EQ(sink.errorCount, 0);
-        ASSERT_EQ(sink.setCount, 1);
-        ASSERT_EQ(val, 0);
-    }
+		// NOTE: false implicitly converted to int
+		ASSERT_EQ(sink.errorCount, 0);
+		ASSERT_EQ(sink.setCount, 1);
+		ASSERT_EQ(val, 0);
+	}
 
-    {
-        SCOPED_TRACE("Parse int with lower bound");
-        const auto p = rcfg::ParamParser<int>{rcfg::LowerBound{10}};
-        int val = 0;
+	{
+		SCOPED_TRACE("Parse int with lower bound");
+		const auto p = rcfg::ParamParser<int>{rcfg::LowerBound{10}};
+		int val = 0;
 
-        {
-            json j = 10;
-            TestEventSink sink;
-            p.parse(sink, val, j, false);
-            ASSERT_EQ(sink.errorCount, 0);
-            ASSERT_EQ(sink.setCount, 1);
-            ASSERT_EQ(val, 10);
-        }
+		{
+			json j = 10;
+			TestEventSink sink;
+			p.parse(sink, val, j, false);
+			ASSERT_EQ(sink.errorCount, 0);
+			ASSERT_EQ(sink.setCount, 1);
+			ASSERT_EQ(val, 10);
+		}
 
-        {
-            val = 0;
-            json j = 5;
-            TestEventSink sink;
-            p.parse(sink, val, j, false);
-            ASSERT_EQ(sink.errorCount, 1);
-            ASSERT_EQ(sink.setCount, 0);
-            ASSERT_EQ(val, 0);
-        }
-    }
+		{
+			val = 0;
+			json j = 5;
+			TestEventSink sink;
+			p.parse(sink, val, j, false);
+			ASSERT_EQ(sink.errorCount, 1);
+			ASSERT_EQ(sink.setCount, 0);
+			ASSERT_EQ(val, 0);
+		}
+	}
 
-    {
-        SCOPED_TRACE("Parse int with default");
-        const auto p = rcfg::ParamParser<int>{rcfg::Default{11}};
-        int val = 0;
+	{
+		SCOPED_TRACE("Parse int with default");
+		const auto p = rcfg::ParamParser<int>{rcfg::Default{11}};
+		int val = 0;
 
-        {
-            json j;
-            TestEventSink sink;
-            p.parse(sink, val, j, false);
-            ASSERT_EQ(sink.setCount, 1);
-            ASSERT_EQ(val, 11);
-        }
+		{
+			json j;
+			TestEventSink sink;
+			p.parse(sink, val, j, false);
+			ASSERT_EQ(sink.setCount, 1);
+			ASSERT_EQ(val, 11);
+		}
 
-        {
-            json j = 5;
-            TestEventSink sink;
-            p.parse(sink, val, j, false);
-            ASSERT_EQ(sink.setCount, 1);
-            ASSERT_EQ(val, 5);
-        }
-    }
+		{
+			json j = 5;
+			TestEventSink sink;
+			p.parse(sink, val, j, false);
+			ASSERT_EQ(sink.setCount, 1);
+			ASSERT_EQ(val, 5);
+		}
+	}
 }
 
 TEST(ParamParser, Secret)
 {
-    {
-        SCOPED_TRACE("Dump int as Secret");
-        const auto p = rcfg::ParamParser<int>{rcfg::Secret};
-        int val = 0;
-        json j;
+	{
+		SCOPED_TRACE("Dump int as Secret");
+		const auto p = rcfg::ParamParser<int>{rcfg::Secret};
+		int val = 0;
+		json j;
 
-        p.dump(val, j);
+		p.dump(val, j);
 
-        ASSERT_EQ(val, 0);
-        ASSERT_EQ(j, "***");
-    }
-    {
-        SCOPED_TRACE("Dump string as Secret");
-        const auto p = rcfg::ParamParser<std::string>{rcfg::Secret};
-        std::string val = "aba";
-        json j;
+		ASSERT_EQ(val, 0);
+		ASSERT_EQ(j, "***");
+	}
+	{
+		SCOPED_TRACE("Dump string as Secret");
+		const auto p = rcfg::ParamParser<std::string>{rcfg::Secret};
+		std::string val = "aba";
+		json j;
 
-        p.dump(val, j);
+		p.dump(val, j);
 
-        ASSERT_EQ(val, "aba");
-        ASSERT_EQ(j, "***");
-    }
+		ASSERT_EQ(val, "aba");
+		ASSERT_EQ(j, "***");
+	}
 }
