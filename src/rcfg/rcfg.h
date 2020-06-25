@@ -431,7 +431,10 @@ namespace rcfg
 
 		void dump(const C & c, Node & node) const override
 		{
-			parser.dump(c.*ptr, node[name]);
+			if (name.empty())
+				parser.dump(c.*ptr, node);
+			else
+				parser.dump(c.*ptr, node[name]);
 		}
 
 		void remove(ISink & sink, const C & c) const override
