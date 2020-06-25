@@ -13,9 +13,10 @@ namespace rcfg
 
 	struct NotEmptyType : public CheckOpBase
 	{
-		void operator() (const std::string & s)
+		template<typename Container>
+		void operator() (const Container & c)
 		{
-			if (s.empty())
+			if (c.empty())
 				throw invalid_parameter("should be not empty");
 		}
 	};
@@ -67,4 +68,28 @@ namespace rcfg
 		}
 		T upper;
 	};
+
+	struct UniqueType : public CheckOpBase
+	{
+		template<typename Container>
+		void operator() (Container & c)
+		{
+			auto it = std::begin(c);
+			while (it < std::end(c))
+			{
+				const auto& v = *it;
+				auto it2 = std::next(it);
+				while (it2 < std::end(c))
+				{
+					const auto& v2 = *it2;
+					if (v == v2)
+						throw invalid_parameter("not unique");
+					++it2;
+				}
+				++it;
+			}
+		}
+	};
+
+	constexpr UniqueType Unique;
 }

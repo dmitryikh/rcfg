@@ -291,10 +291,18 @@ namespace rcfg
 	struct VectorParser : public IParser<VectorType<P>>
 	{
 		using Vector = VectorType<P>;
+		using checkFunc = std::function<void(const VectorType<P> & p)>;
 	public:
 		VectorParser(Parser<P> parser = ParamParser<P>())
 			: parser(std::move(parser))
 		{}
+
+		template<typename... Ops>
+		VectorParser(Parser<P> parser, Ops&&... ops)
+			: parser(std::move(parser))
+		{
+			(addOp(std::forward<Ops>(ops)), ...);
+		}
 
 		void parse(ISink & sink, Vector & c, const Node & node, bool isUpdate) const override
 		{
@@ -304,17 +312,41 @@ namespace rcfg
 				return;
 			}
 
+			Vector origC = c;
+			size_t origLen = c.size();
 			if (c.size() != node.size())
 			{
-				c.clear();
+				if (!isUpdatable && isUpdate)
+				{
+					sink.NotUpdatable(
+						std::string("size(") + std::to_string(c.size()) + ")",
+						std::string("size(") + std::to_string(node.size()) + ")"
+					);
+					return;
+				}
 				c.resize(node.size(), {});
 			}
 
 			size_t i = 0;
 			for (auto it = node.begin(); it != node.end(); ++it, ++i) {
 				sink.Push(std::to_string(i));
-				parser.parse(sink, c[i], *it, isUpdate);
+				parser.parse(sink, c[i], *it, isUpdate && i < origLen);
 				sink.Pop();
+			}
+
+			if (origLen > node.size() && isUpdate)
+				removeInternal(sink, origC, node.size());
+
+			for (const auto & f : checkFuncs)
+			{
+				try
+				{
+					f(c);
+				}
+				catch(const std::exception& ex)
+				{
+					sink.Error(ex.what());
+				}
 			}
 		}
 
@@ -344,7 +376,20 @@ namespace rcfg
 			}
 		}
 
+		void addOp(const UpdatableTag &)
+		{
+			isUpdatable = true;
+		}
+
+		template<typename Op>
+		auto addOp(Op && op) -> std::enable_if_t<std::is_base_of_v<CheckOpBase, std::decay_t<Op>>>
+		{
+			checkFuncs.emplace_back(std::forward<Op>(op));
+		}
+
 		Parser<P> parser;
+		bool isUpdatable = false;
+		std::vector<checkFunc> checkFuncs;
 	};
 
 	template<typename C, typename P>
