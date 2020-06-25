@@ -377,8 +377,21 @@ namespace rcfg
 			{
 				// syntactic sugar to automatically determaine std::vector class
 				// member and use VectorParser implicitly
-				using value_type = typename utils::ContainerValueType<P>::value_type;
+				using value_type = typename utils::ContainerTrait<P>::value_type;
 				member(dest, name, VectorParser<value_type>(ParamParser<value_type>(std::forward<Ops>(ops)...)));
+			}
+			else if constexpr (utils::IsMapContainer<P>::value)
+			{
+				// syntactic sugar to automatically determaine std::map/unordered_map
+				// member and use MapParser implicitly
+				using value_type = typename utils::ContainerTrait<P>::value_type;
+
+				using MapParserType = MapParser<
+					typename utils::ContainerTrait<P>::key_type,
+					value_type,
+					utils::ContainerTrait<P>::template container>;
+
+				member(dest, name, MapParserType(ParamParser<value_type>(std::forward<Ops>(ops)...)));
 			}
 			else
 			{

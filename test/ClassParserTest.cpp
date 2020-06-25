@@ -185,3 +185,43 @@ TEST(ClassParser, VectorMemberParser)
 		ASSERT_EQ(c.v1, expected);
 	}
 }
+
+struct Config3
+{
+	std::map<std::string, std::string> m1;
+	std::unordered_map<std::string, int> m2;
+};
+
+auto getConfig3Parser()
+{
+	rcfg::ClassParser<Config3> p1;
+	p1.member(&Config3::m1, "m1");
+	p1.member(&Config3::m2, "m2");
+	return p1;
+}
+
+TEST(ClassParser, MapMemberParser)
+{
+	const auto p = getConfig3Parser();
+	{
+		SCOPED_TRACE("Correct Parse");
+		Config3 c{};
+		json j;
+		j["m1"]["a"] = "A";
+		j["m1"]["b"] = "B";
+		j["m2"]["c"] = 3;
+
+		TestEventSink sink;
+		p.parse(sink, c, j, false);
+
+		ASSERT_EQ(sink.errorCount, 0);
+		ASSERT_EQ(sink.setCount, 3);
+
+		ASSERT_EQ(c.m1.size(), 2);
+		ASSERT_EQ(c.m1.at("a"), "A");
+		ASSERT_EQ(c.m1.at("b"), "B");
+
+		ASSERT_EQ(c.m2.size(), 1);
+		ASSERT_EQ(c.m2.at("c"), 3);
+	}
+}
