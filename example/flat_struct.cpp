@@ -89,9 +89,9 @@ Read config from json:
 }
 """
 +Dir=/c/abs/path
-+Severity=4 (defalut)
++Severity=4 (default)
 +Feature=1
-+Name=MyName (defalut)
++Name=MyName (default)
 +Vel=99.000000
 +Password=***
 

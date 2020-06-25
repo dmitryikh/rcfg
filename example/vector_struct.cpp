@@ -118,9 +118,9 @@ Read config from json:
 +0.Severity=5
 +1.Name=Engine
 +1.Path=/app/engine
-+1.Severity=4 (defalut)
++1.Severity=4 (default)
 +2.Name=Net
-+2.Path=/var/lib/log/ (defalut)
++2.Path=/var/lib/log/ (default)
 +2.Severity=3
 
 
@@ -143,7 +143,7 @@ Update config from json:
 ]
 """
 +0.Severity=5->3
-+2.Severity=3->4 (defalut)
++2.Severity=3->4 (default)
 
 
 Dump config back to json:

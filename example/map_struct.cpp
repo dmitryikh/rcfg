@@ -114,7 +114,7 @@ Read config from json:
 }
 """
 +Engine.Path=/app/engine
-+Engine.Severity=4 (defalut)
++Engine.Severity=4 (default)
 +Net.Path=/app/net
 +Net.Severity=3
 +Root.Path=/root
@@ -140,5 +140,5 @@ Update config from json:
 }
 """
 +Net.Severity=3->2
-+Root.Severity=5->4 (defalut)
++Root.Severity=5->4 (default)
 */

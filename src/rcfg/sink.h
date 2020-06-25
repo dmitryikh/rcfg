@@ -67,7 +67,7 @@ namespace rcfg
 		{
 			std::stringstream ss;
 			ss << "+" << Key() << "=" << old << "->" << neww
-				<< (isDefault ? " (defalut)" : "");
+				<< (isDefault ? " (default)" : "");
 			_logFunc(std::move(ss).str());
 		}
 
