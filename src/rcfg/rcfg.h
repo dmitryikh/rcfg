@@ -100,43 +100,6 @@ namespace rcfg
 		IParserSPtr _parserImpl;
 	};
 
-	template<typename C, typename P>
-	struct MemberParser : public IParser<C>
-	{
-	private:
-		using checkFunc = std::function<void(const P & p)>;
-
-	public:
-		MemberParser(P C::* ptr, const std::string & name, Parser<P> parser)
-			: name(name)
-			, ptr(ptr)
-			, parser(std::move(parser))
-		{}
-
-		void parse(ISink & sink, C & c, const Node & node, bool isUpdate) const override
-		{
-			sink.Push(name);
-			if (node.count(name) > 0)
-			{
-				parser.parse(sink, c.*ptr, node[name], isUpdate);
-			}
-			else
-			{
-				parser.parse(sink, c.*ptr, Node{}, isUpdate);
-			}
-			sink.Pop();
-		}
-
-		void dump(const C & c, Node & node) const override
-		{
-			parser.dump(c.*ptr, node[name]);
-		}
-
-		std::string name;
-		P C::* ptr;
-		Parser<P> parser;
-	};
-
 	template<typename P>
 	struct ParamParser : public IParser<P>
 	{
@@ -344,6 +307,53 @@ namespace rcfg
 			}
 		}
 
+		Parser<P> parser;
+	};
+
+	template<typename C, typename P>
+	struct MemberParser : public IParser<C>
+	{
+	private:
+		using checkFunc = std::function<void(const P & p)>;
+
+	public:
+		MemberParser(P C::* ptr, const std::string & name, Parser<P> parser)
+			: name(name)
+			, ptr(ptr)
+			, parser(std::move(parser))
+		{}
+
+		void parse(ISink & sink, C & c, const Node & node, bool isUpdate) const override
+		{
+			if (name.empty())
+			{
+				// It makes possible parse the case like this:
+				// struct A { int i1; };
+				// struct B { A a; int i2;}
+				// json : `{"i1": 1, "i2": 2}`
+				parser.parse(sink, c.*ptr, node, isUpdate);
+				return;
+			}
+
+			sink.Push(name);
+			if (node.count(name) > 0)
+			{
+				parser.parse(sink, c.*ptr, node[name], isUpdate);
+			}
+			else
+			{
+				parser.parse(sink, c.*ptr, Node{}, isUpdate);
+			}
+			sink.Pop();
+		}
+
+		void dump(const C & c, Node & node) const override
+		{
+			parser.dump(c.*ptr, node[name]);
+		}
+
+		std::string name;
+		P C::* ptr;
 		Parser<P> parser;
 	};
 

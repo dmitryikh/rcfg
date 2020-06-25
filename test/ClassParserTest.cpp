@@ -110,3 +110,47 @@ TEST(ClassParser, Parse)
 		ASSERT_EQ(c.b3, true);
 	}
 }
+
+struct EmbConf
+{
+	int i1;
+};
+
+struct Conf
+{
+	EmbConf e;
+	std::string s1;
+};
+
+auto getConfParser()
+{
+	rcfg::ClassParser<EmbConf> p1;
+	p1.member(&EmbConf::i1, "i1");
+
+	rcfg::ClassParser<Conf> p2;
+	p2.member(&Conf::e, "", p1);
+	p2.member(&Conf::s1, "s1");
+
+	return p2;
+}
+
+TEST(ClassParser, FlatMemberParser)
+{
+	const auto p = getConfParser();
+	{
+		SCOPED_TRACE("Correct Parse");
+		Conf c{};
+		json j;
+		j["s1"] = "lalaland";
+		j["i1"] = 10;
+
+		TestEventSink sink;
+		p.parse(sink, c, j, false);
+
+		ASSERT_EQ(sink.errorCount, 0);
+		ASSERT_EQ(sink.setCount, 2);
+
+		ASSERT_EQ(c.e.i1, 10);
+		ASSERT_EQ(c.s1, "lalaland");
+	}
+}
