@@ -23,6 +23,8 @@ namespace rcfg
 		virtual void NotUpdatable(const std::string & old, const std::string & neww) {};
 		virtual void Changed(const std::string & old, const std::string & neww, const bool isDefault) {};
 		virtual void Set(const std::string & value, const bool isDefault) {};
+		// Notify about value removal while updating config. It's needed for vector and maps
+		virtual void Remove(const std::string & value) {};
 
 		virtual ~ISink() = default;
 	};
@@ -75,7 +77,14 @@ namespace rcfg
 		{
 			std::stringstream ss;
 			ss << "+" << Key() << "=" << value
-				<< (isDefault ? " (defalut)" : "");
+				<< (isDefault ? " (default)" : "");
+			_logFunc(std::move(ss).str());
+		}
+
+		void Remove(const std::string & value) override
+		{
+			std::stringstream ss;
+			ss << "-" << Key() << "=" << value;
 			_logFunc(std::move(ss).str());
 		}
 

@@ -58,11 +58,12 @@ namespace rcfg
 		P p;
 	};
 
-	template<typename C>
+	template<typename P>
 	struct IParser
 	{
-		virtual void parse(ISink & sink, C & c, const Node & node, bool isUpdate) const = 0;
-		virtual void dump(const C & c, Node & node) const = 0;
+		virtual void parse(ISink & sink, P & c, const Node & node, bool isUpdate) const = 0;
+		virtual void dump(const P & c, Node & node) const = 0;
+		virtual void remove(ISink & sink, const P & c) const = 0;
 		virtual ~IParser() = default;
 	};
 
@@ -95,6 +96,11 @@ namespace rcfg
 		void dump(const P & p, Node & node) const
 		{
 			_parserImpl->dump(p, node);
+		}
+
+		void remove(ISink & sink, const P & p) const
+		{
+			_parserImpl->remove(sink, p);
 		}
 
 	private:
@@ -196,6 +202,11 @@ namespace rcfg
 				ParamTrait<P>::To(p, node);
 		}
 
+		void remove(ISink & sink, const P & p) const override
+		{
+			sink.Remove(toString(p));
+		}
+
 		template<typename P2>
 		void addOp(const Default<P2> & val)
 		{
@@ -263,6 +274,16 @@ namespace rcfg
 			}
 		}
 
+		void remove(ISink & sink, const Map & c) const override
+		{
+			for (const auto & [key, value] : c)
+			{
+				sink.Push(FromKey(key));
+				parser.remove(sink, value);
+				sink.Pop();
+			}
+		}
+
 		Parser<P> parser;
 	};
 
@@ -305,6 +326,21 @@ namespace rcfg
 				node.emplace_back();
 				parser.dump(value, node[i]);
 				i++;
+			}
+		}
+
+		void remove(ISink & sink, const Vector & c) const override
+		{
+			removeInternal(sink, c, 0);
+		}
+
+		void removeInternal(ISink & sink, const Vector & c, const size_t start) const
+		{
+			for (size_t i = start; i < c.size(); i++)
+			{
+				sink.Push(std::to_string(i));
+				parser.remove(sink, c[i]);
+				sink.Pop();
 			}
 		}
 
@@ -351,6 +387,17 @@ namespace rcfg
 		void dump(const C & c, Node & node) const override
 		{
 			parser.dump(c.*ptr, node[name]);
+		}
+
+		void remove(ISink & sink, const C & c) const override
+		{
+			if (!name.empty())
+				sink.Push(name);
+
+			parser.remove(sink, c.*ptr);
+
+			if (!name.empty())
+				sink.Pop();
 		}
 
 		std::string name;
@@ -409,6 +456,12 @@ namespace rcfg
 		{
 			for (auto & paramParser : paramParsers)
 				paramParser.dump(c, node);
+		}
+
+		void remove(ISink & sink, const C & c) const override
+		{
+			for (auto & paramParser : paramParsers)
+				paramParser.remove(sink, c);
 		}
 
 		std::vector<Parser<C>> paramParsers;
