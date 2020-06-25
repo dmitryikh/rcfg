@@ -69,6 +69,7 @@ namespace rcfg
 	template<typename P>
 	class Parser
 	{
+		using Type = P;
 		using IParserSPtr = std::shared_ptr<IParser<P>>;
 	public:
 		template<typename ParserType>
@@ -372,7 +373,17 @@ namespace rcfg
 		template<typename P, typename... Ops>
 		void member(P C::* dest, const std::string & name, Ops&&... ops)
 		{
-			member(dest, name, ParamParser<P>(std::forward<Ops>(ops)...));
+			if constexpr (utils::IsVectorContainer<P>::value)
+			{
+				// syntactic sugar to automatically determaine std::vector class
+				// member and use VectorParser implicitly
+				using value_type = typename utils::ContainerValueType<P>::value_type;
+				member(dest, name, VectorParser<value_type>(ParamParser<value_type>(std::forward<Ops>(ops)...)));
+			}
+			else
+			{
+				member(dest, name, ParamParser<P>(std::forward<Ops>(ops)...));
+			}
 		}
 
 		void parse(ISink & sink, C & c, const Node & node, bool isUpdate) const override

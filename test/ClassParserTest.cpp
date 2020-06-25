@@ -154,3 +154,34 @@ TEST(ClassParser, FlatMemberParser)
 		ASSERT_EQ(c.s1, "lalaland");
 	}
 }
+
+struct Config2
+{
+	std::vector<std::string> v1;
+};
+
+auto getConfig2Parser()
+{
+	rcfg::ClassParser<Config2> p1;
+	p1.member(&Config2::v1, "");
+	return p1;
+}
+
+TEST(ClassParser, VectorMemberParser)
+{
+	const auto p = getConfig2Parser();
+	{
+		SCOPED_TRACE("Correct Parse");
+		Config2 c{};
+		json j = {"aaa", "bbb", "ccc"};
+
+		TestEventSink sink;
+		p.parse(sink, c, j, false);
+
+		ASSERT_EQ(sink.errorCount, 0);
+		ASSERT_EQ(sink.setCount, 3);
+
+		const auto expected = std::vector<std::string>{"aaa", "bbb", "ccc"};
+		ASSERT_EQ(c.v1, expected);
+	}
+}
