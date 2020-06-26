@@ -155,16 +155,19 @@ TEST(ClassParser, FlatMemberParser)
 	}
 }
 
-struct Config2
+namespace
 {
-	std::vector<std::string> v1;
-};
+	struct Config2
+	{
+		std::vector<std::string> v1;
+	};
 
-auto getConfig2Parser()
-{
-	rcfg::ClassParser<Config2> p1;
-	p1.member(&Config2::v1, "");
-	return p1;
+	auto getConfig2Parser()
+	{
+		rcfg::ClassParser<Config2> p1;
+		p1.member(&Config2::v1, "");
+		return p1;
+	}
 }
 
 TEST(ClassParser, VectorMemberParser)

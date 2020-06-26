@@ -241,10 +241,18 @@ namespace rcfg
 	struct MapParser : public IParser<MapType<K, P>>
 	{
 		using Map = MapType<K, P>;
+		using checkFunc = std::function<void(const Map & p)>;
 	public:
 		MapParser(Parser<P> parser = ParamParser<P>())
 			: parser(std::move(parser))
 		{}
+
+		template<typename... Ops>
+		MapParser(Parser<P> parser, Ops&&... ops)
+			: parser(std::move(parser))
+		{
+			(addOp(std::forward<Ops>(ops)), ...);
+		}
 
 		static K ToKey(const std::string & key)
 		{
@@ -258,11 +266,66 @@ namespace rcfg
 
 		void parse(ISink & sink, Map & c, const Node & node, bool isUpdate) const override
 		{
+			if (isUpdate && !isUpdatable)
+			{
+				if (node.size() != c.size())
+				{
+					sink.NotUpdatable(
+						std::string("size(") + std::to_string(c.size()) + ")",
+						std::string("size(") + std::to_string(node.size()) + ")"
+					);
+					return;
+				}
+
+				for (const auto & item : node.items())
+				{
+					if (c.count(ToKey(item.key())) == 0)
+					{
+						sink.NotUpdatable(
+							std::string("size(") + std::to_string(c.size()) + ")",
+							std::string("size(") + std::to_string(node.size()) + ")"
+						);
+						return;
+
+					}
+				}
+			}
+
+			Map cOrig = c;
+			c.clear();
 			for (const auto & item : node.items())
 			{
 				sink.Push(item.key());
-				parser.parse(sink, c[ToKey(item.key())], item.value(), isUpdate);
+				const auto key = ToKey(item.key());
+				const bool isNew = cOrig.count(key) == 0;
+				const bool update = isUpdate && !isNew;
+				if (update)
+					c[key] = cOrig[key];
+				parser.parse(sink, c[key], item.value(), update);
+				cOrig.erase(key);
 				sink.Pop();
+			}
+
+			if (isUpdate)
+			{
+				for (const auto& [key, value] : cOrig)
+				{
+					sink.Push(FromKey(key));
+					parser.remove(sink, value);
+					sink.Pop();
+				}
+			}
+
+			for (const auto & f : checkFuncs)
+			{
+				try
+				{
+					f(c);
+				}
+				catch(const std::exception& ex)
+				{
+					sink.Error(ex.what());
+				}
 			}
 		}
 
@@ -284,14 +347,27 @@ namespace rcfg
 			}
 		}
 
+		void addOp(const UpdatableTag &)
+		{
+			isUpdatable = true;
+		}
+
+		template<typename Op>
+		auto addOp(Op && op) -> std::enable_if_t<std::is_base_of_v<CheckOpBase, std::decay_t<Op>>>
+		{
+			checkFuncs.emplace_back(std::forward<Op>(op));
+		}
+
 		Parser<P> parser;
+		bool isUpdatable = false;
+		std::vector<checkFunc> checkFuncs;
 	};
 
 	template<typename P, template <class, class ... > class VectorType = std::vector>
 	struct VectorParser : public IParser<VectorType<P>>
 	{
 		using Vector = VectorType<P>;
-		using checkFunc = std::function<void(const VectorType<P> & p)>;
+		using checkFunc = std::function<void(const Vector & p)>;
 	public:
 		VectorParser(Parser<P> parser = ParamParser<P>())
 			: parser(std::move(parser))
