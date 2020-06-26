@@ -3,6 +3,8 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <set>
+#include <unordered_set>
 
 namespace rcfg::utils
 {
@@ -31,6 +33,13 @@ namespace rcfg::utils
 	struct IsMapContainer<std::map<Args...>> : std::true_type{};
 	template<typename... Args>
 	struct IsMapContainer<std::unordered_map<Args...>> : std::true_type{};
+
+	template<typename T>
+	struct IsSetContainer : std::false_type{};
+	template<typename... Args>
+	struct IsSetContainer<std::set<Args...>> : std::true_type{};
+	template<typename... Args>
+	struct IsSetContainer<std::unordered_set<Args...>> : std::true_type{};
 
 
 	template<typename Cont>
@@ -66,5 +75,21 @@ namespace rcfg::utils
 
 		template<typename K, typename V, typename... Args2>
 		using container = std::unordered_map<K, V, Args2...>;
+	};
+
+	template<typename ValueType, typename... Args>
+	struct ContainerTrait<std::set<ValueType, Args...>>
+	{
+		using value_type = ValueType;
+		template<typename V, typename... Args2>
+		using container = std::set<V, Args2...>;
+	};
+
+	template<typename ValueType, typename... Args>
+	struct ContainerTrait<std::unordered_set<ValueType, Args...>>
+	{
+		using value_type = ValueType;
+		template<typename V, typename... Args2>
+		using container = std::unordered_set<V, Args2...>;
 	};
 }

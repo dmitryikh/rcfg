@@ -5,6 +5,7 @@ add_executable(test
     ParamParserTest.cpp
     MapParserTest.cpp
     VectorParserTest.cpp
+    SetParserTest.cpp
 )
 
 target_link_libraries(test ${CONAN_LIBS})

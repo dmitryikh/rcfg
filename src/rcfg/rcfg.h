@@ -237,6 +237,150 @@ namespace rcfg
 		std::vector<checkFunc> checkFuncs;
 	};
 
+	template<typename P, template <class, class ... > class SetType = std::set>
+	struct SetParser : public IParser<SetType<P>>
+	{
+		using Set = SetType<P>;
+		using checkFunc = std::function<void(const Set & p)>;
+	public:
+		SetParser(Parser<P> parser = ParamParser<P>())
+			: parser(std::move(parser))
+		{}
+
+		template<typename... Ops>
+		SetParser(Parser<P> parser, Ops&&... ops)
+			: parser(std::move(parser))
+		{
+			(addOp(std::forward<Ops>(ops)), ...);
+		}
+
+		void parse(ISink & sink, Set & c, const Node & node, bool isUpdate) const override
+		{
+			if (!node.is_array())
+			{
+				sink.Error("Expecting array");
+				return;
+			}
+
+			Set cNew;
+			if (!isUpdate)
+				c.clear();
+
+			if (isUpdate && (c.size() != node.size()) && !isUpdatable)
+			{
+				// Size of the array is changed, but Set suppose to be not updateable
+				sink.NotUpdatable(
+					std::string("size(") + std::to_string(c.size()) + ")",
+					std::string("size(") + std::to_string(node.size()) + ")"
+				);
+				return;
+			}
+
+			size_t i = 0;
+			for (auto it = node.begin(); it != node.end(); ++it, ++i) {
+				sink.Push(std::to_string(i));
+				P p;
+				VoidSink s;
+				parser.parse(s, p, *it, false);
+				if (s.IsError())
+				{
+					// just to log the error
+					parser.parse(sink, p, *it, false);
+					sink.Pop();
+					return;
+				}
+				if (c.count(p) == 0)
+				{
+					if (isUpdate && !isUpdatable)
+					{
+						// TODO: print elem
+						sink.Pop();
+						sink.NotUpdatable(
+							std::string("size(") + std::to_string(c.size()) + ")",
+							std::string("size(") + std::to_string(node.size()) + ")"
+						);
+						return;
+					}
+					parser.parse(sink, p, *it, false);
+					if (cNew.count(p) > 0)
+					{
+						sink.Error("duplicate");
+						sink.Pop();
+						return;
+					}
+				}
+				cNew.insert(p);
+				sink.Pop();
+			}
+
+			for (const auto& el : c)
+			{
+				if (!cNew.count(el))
+				{
+					if (!isUpdatable)
+					{
+						sink.NotUpdatable("", "");
+						return;
+					}
+					// The element was deleted and we don't know its
+					// position. So use `*`
+					sink.Push("*");
+					parser.remove(sink, el);
+					sink.Pop();
+				}
+			}
+
+			c = cNew;
+
+			for (const auto & f : checkFuncs)
+			{
+				try
+				{
+					f(c);
+				}
+				catch(const std::exception& ex)
+				{
+					sink.Error(ex.what());
+				}
+			}
+		}
+
+		void dump(const Set & c, Node & node) const override
+		{
+			size_t i = 0;
+			for (const auto & value : c)
+			{
+				node.emplace_back();
+				parser.dump(value, node[i]);
+				i++;
+			}
+		}
+
+		void remove(ISink & sink, const Set & c) const override
+		{
+			for (const auto& el : c)
+			{
+				parser.remove(sink, el);
+
+			}
+		}
+
+		void addOp(const UpdatableTag &)
+		{
+			isUpdatable = true;
+		}
+
+		template<typename Op>
+		auto addOp(Op && op) -> std::enable_if_t<std::is_base_of_v<CheckOpBase, std::decay_t<Op>>>
+		{
+			checkFuncs.emplace_back(std::forward<Op>(op));
+		}
+
+		Parser<P> parser;
+		bool isUpdatable = false;
+		std::vector<checkFunc> checkFuncs;
+	};
+
 	template<typename K, typename P, template <class, class, class ... > class MapType = std::map>
 	struct MapParser : public IParser<MapType<K, P>>
 	{
@@ -563,6 +707,18 @@ namespace rcfg
 					utils::ContainerTrait<P>::template container>;
 
 				member(dest, name, MapParserType(ParamParser<value_type>(std::forward<Ops>(ops)...)));
+			}
+			else if constexpr (utils::IsSetContainer<P>::value)
+			{
+				// syntactic sugar to automatically determaine std::set/unordered_set
+				// member and use SetParser implicitly
+				using value_type = typename utils::ContainerTrait<P>::value_type;
+
+				using SetParserType = SetParser<
+					value_type,
+					utils::ContainerTrait<P>::template container>;
+
+				member(dest, name, SetParserType(ParamParser<value_type>(std::forward<Ops>(ops)...)));
 			}
 			else
 			{

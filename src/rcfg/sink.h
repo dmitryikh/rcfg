@@ -29,6 +29,15 @@ namespace rcfg
 		virtual ~ISink() = default;
 	};
 
+	class VoidSink : public ISink
+	{
+	public:
+		bool IsError() const { return isError; }
+		void Error(const std::string & error) override { isError = true;}
+	private:
+		bool isError = false;
+	};
+
 	// SimpleSink that log every event to `LogFunc` and keep error flag
 	class LoggerSink : public ISink
 	{
