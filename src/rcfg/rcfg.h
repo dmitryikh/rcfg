@@ -42,6 +42,12 @@ namespace rcfg
 		return p;
 	}
 
+	template<>
+	inline std::string ParamTrait<bool>::ToString(const bool & p)
+	{
+		return p ? "true" : "false";
+	}
+
 	struct UpdatableTag {};
 	constexpr UpdatableTag Updatable;
 
