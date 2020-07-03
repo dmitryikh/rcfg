@@ -44,8 +44,14 @@ namespace rcfg
 	public:
 		using LogFunc = std::function<void(std::string string)>;
 
-		LoggerSink(LogFunc logFunc)
-			: _logFunc(std::move(logFunc))
+		LoggerSink(LogFunc logInfoFunc)
+			: _logInfoFunc(std::move(logInfoFunc))
+		{}
+
+		LoggerSink(LogFunc logInfoFunc, LogFunc logWarningFunc, LogFunc logErrorFunc)
+			: _logInfoFunc(std::move(logInfoFunc))
+			, _logWarningFunc(std::move(logWarningFunc))
+			, _logErrorFunc(std::move(logErrorFunc))
 		{}
 
 		void Push(const std::string & key) override
@@ -63,7 +69,10 @@ namespace rcfg
 			_isError = true;
 			std::stringstream ss;
 			ss << "!!!" << Key() << ": " << error;
-			_logFunc(std::move(ss).str());
+			if (_logErrorFunc)
+				_logErrorFunc(std::move(ss).str());
+			else
+				_logInfoFunc(std::move(ss).str());
 		}
 
 		void NotUpdatable(const std::string & old, const std::string & neww) override
@@ -71,7 +80,10 @@ namespace rcfg
 			std::stringstream ss;
 			ss << "!" << Key() << " changed " << old << "->" << neww
 				<< " but will make effect only after RESTART";
-			_logFunc(std::move(ss).str());
+			if (_logWarningFunc)
+				_logWarningFunc(std::move(ss).str());
+			else
+				_logInfoFunc(std::move(ss).str());
 		}
 
 		void Changed(const std::string & old, const std::string & neww, const bool isDefault) override
@@ -79,7 +91,7 @@ namespace rcfg
 			std::stringstream ss;
 			ss << "+" << Key() << "=" << old << "->" << neww
 				<< (isDefault ? " (default)" : "");
-			_logFunc(std::move(ss).str());
+			_logInfoFunc(std::move(ss).str());
 		}
 
 		void Set(const std::string & value, const bool isDefault) override
@@ -87,14 +99,14 @@ namespace rcfg
 			std::stringstream ss;
 			ss << "+" << Key() << "=" << value
 				<< (isDefault ? " (default)" : "");
-			_logFunc(std::move(ss).str());
+			_logInfoFunc(std::move(ss).str());
 		}
 
 		void Remove(const std::string & value) override
 		{
 			std::stringstream ss;
 			ss << "-" << Key() << "=" << value;
-			_logFunc(std::move(ss).str());
+			_logInfoFunc(std::move(ss).str());
 		}
 
 		bool IsError() const
@@ -110,6 +122,8 @@ namespace rcfg
 
 		bool _isError = false;
 		std::vector<std::string> _keys;
-		LogFunc _logFunc;
+		LogFunc _logInfoFunc;
+		LogFunc _logWarningFunc = nullptr;
+		LogFunc _logErrorFunc = nullptr;
 	};
 }
