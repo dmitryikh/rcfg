@@ -43,11 +43,7 @@ namespace rcfg::utils
 
 
 	template<typename Cont>
-	struct ContainerTrait
-	{
-		using value_type = Cont;
-		using container = void;
-	};
+	struct ContainerTrait {};
 
 	template<typename ValueType, typename... Args>
 	struct ContainerTrait<std::vector<ValueType, Args...>>
